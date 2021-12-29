@@ -5,7 +5,7 @@ from omegleChat import omegle
 def menu():
     while True:
         if (choose := input("1) Start chatting\n2) User settings\n3) Start bot\n4) Bot settings\n5) Close")).isnumeric() \
-                and (choose := int(choose)) > 0 and choose < 5:
+                and (choose := int(choose)) > 0 and choose < 4:
             return choose
 
 
@@ -37,6 +37,5 @@ if __name__ == "__main__":
             1: startChatting,
             2: userSettings,
             3: startBot,
-            4: botSettings,
-            5: close
+            4: close
         }[menu()]()
