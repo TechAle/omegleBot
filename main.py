@@ -14,6 +14,7 @@ def startChatting():
 
 
 def userSettings():
+    settings.modifySettings()
     settings.save()
 
 def startBot():
@@ -31,11 +32,11 @@ def close():
 settings = settingClass()
 
 if __name__ == "__main__":
-    optionMenu = menu()
-    {
-        1: startChatting,
-        2: userSettings,
-        3: startBot,
-        4: botSettings,
-        5: close
-    }[optionMenu]()
+    while True:
+        {
+            1: startChatting,
+            2: userSettings,
+            3: startBot,
+            4: botSettings,
+            5: close
+        }[menu()]()

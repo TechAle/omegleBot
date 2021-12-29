@@ -191,7 +191,9 @@ class subChat:
                 self.log(match[i])
 
         else:
-            a = 0
+            for i in range(1, output.__len__() - 1):
+                self.log(output[i])
+        self.log("Found new chat")
 
     def close(self):
         self._alive = False

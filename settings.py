@@ -2,6 +2,14 @@ import os.path
 import json
 
 
+def sceltaInput():
+    while True:
+        if (value := input(
+                "1) tags\n2) lang\n3) first message\n4) delay first message\n5) delay research\n6) Exit")).isnumeric() \
+                and (value := int(value)) > 0 and value < 7:
+            return value
+
+
 class settingClass:
     __tags = []
     __lang = ""
@@ -48,7 +56,46 @@ class settingClass:
                 self.__delayResearch = data["delayResearch"]
 
     def save(self):
-        pass
+        json.dump({
+            'lang': self.__lang,
+            'tags': self.__tags,
+            'firstMessage': self.__firstMessage,
+            'delayFirstMessage': self.__delayFirstMessage,
+            'delayResearch': self.__delayResearch
+        }, open('settings.json', 'w'), indent=4)
+
+    def changeTags(self):
+        for i, tag in enumerate(self.__tags):
+            print(str(i + 1) + " " + tag)
+        inp = input("Number: Remove, other: Add new tag")
+        if inp.isnumeric():
+            self.__tags.pop(int(inp)-1)
+        else:
+            self.__tags.append(inp)
+
+
+    def changeLang(self):
+        self.__lang = input("Lang: ")
+
+    def changeFirstMessage(self):
+        self.__firstMessage = input("First message: ")
+
+    def changeDelayFirstMessage(self):
+        self.__delayFirstMessage = float(input("Delay first message: "))
+
+    def changeDelayResearch(self):
+        self.__delayResearch = float(input("Delay research: "))
 
     def modifySettings(self):
-        pass
+        while True:
+            scelta = sceltaInput()
+            {
+                1: self.changeTags,
+                2: self.changeLang,
+                3: self.changeFirstMessage,
+                4: self.changeDelayFirstMessage,
+                5: self.changeDelayResearch,
+                6: lambda: None
+            }[scelta]()
+            if scelta == 6:
+                break
