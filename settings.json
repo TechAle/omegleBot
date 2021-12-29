@@ -1,7 +1,8 @@
 {
   "lang" : "it",
-  "tags" : ["test"],
-  "firstMessage" : "Ehy ciao!",
-  "delayFirstMessage" : 1
+  "tags" : [""],
+  "firstMessage" : "",
+  "delayFirstMessage" : 1,
+  "delayResearch" : 1
 }
 

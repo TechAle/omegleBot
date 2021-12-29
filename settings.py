@@ -1,11 +1,13 @@
 import os.path
 import json
 
+
 class settingClass:
     __tags = []
     __lang = ""
     __firstMessage = ""
     __delayFirstMessage = 0
+    __delayResearch = 0
 
     def getTags(self):
         return self.__tags
@@ -18,6 +20,9 @@ class settingClass:
 
     def getDelayFirstMessage(self):
         return self.__delayFirstMessage
+
+    def getDelayResearch(self):
+        return self.__delayResearch
 
     def __init__(self):
         self.__load()
@@ -39,10 +44,11 @@ class settingClass:
             if "delayFirstMessage" in data:
                 self.__delayFirstMessage = data["delayFirstMessage"]
 
+            if "delayResearch" in data:
+                self.__delayResearch = data["delayResearch"]
 
     def save(self):
         pass
 
     def modifySettings(self):
         pass
-

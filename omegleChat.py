@@ -2,10 +2,17 @@ from data import urls, header
 import requests
 import json
 import threading
-import time
 import logging
 import os
 from datetime import datetime
+import sys
+import select
+import time
+
+read_list = [sys.stdin]
+
+timeout = 0.1  # seconds
+last_work_time = time.time()
 
 if not os.path.exists("./chats"):
     os.makedirs("./chats")
@@ -36,12 +43,14 @@ class omegle:
     __id = 0
     __firstMessage = ""
     __delayFirstMessage = 0
+    __delayResearch = 0
 
-    def __init__(self, tags, lang, firstMessage, delayFirstMessage):
+    def __init__(self, tags, lang, firstMessage, delayFirstMessage, delayResearch):
         self.__tags = tags
         self.__lang = lang
         self.__firstMessage = firstMessage
         self.__delayFirstMessage = delayFirstMessage
+        self.__delayResearch = delayResearch
         self.__run()
 
     def __run(self):
@@ -50,12 +59,16 @@ class omegle:
     def __newChat(self):
         i = 0
         while True:
-            self.__chats.append(subChat(self.__tags, self.__lang, self.__id, self.__firstMessage, self.__delayFirstMessage))
+            app.info("Looking for new chat")
+            self.__chats.append(
+                subChat(self.__tags, self.__lang, self.__id, self.__firstMessage, self.__delayFirstMessage))
             self.__id += 1
             continuare = self.__chats[i].startChat()
-            i+=1
+            i += 1
             if not continuare:
                 break
+            else:
+                time.sleep(self.__delayResearch)
 
 
 class subChat:
@@ -100,29 +113,46 @@ class subChat:
             requests.post(urls["send"],
                           headers=header,
                           data={'id': self.__uuid, 'msg': self.__firstMessage})
-        while True:
-            message = input("")
-            if not self._alive:
-                output = message
-                break
-            if message == 'typing' or message == 'stoptyping':
-                requests.post(urls[message],
-                              headers=header,
-                              data={'id': self.__uuid})
-            elif message != 'disconnect':
-                requests.post(urls["send"],
-                              headers=header,
-                              data={'id': self.__uuid, 'msg': message})
-                self.log(message)
-            else:
-                requests.post(urls["disconnect"],
-                              headers=header,
-                              data={'id': self.__uuid})
-                output = input("Disconnected, do you wanna continue?")
-                self.log("Disconnected")
-                break
-        if output.lower().startswith('n'):
+        while self._alive:
+            global read_list
+            # while still waiting for input on at least one file
+            while read_list:
+                ready = select.select(read_list, [], [], timeout)[0]
+                if not ready:
+                    if not self.canContinue():
+                        break
+                else:
+                    for file in ready:
+                        line = file.readline()
+                        if not line:  # EOF, remove file from input list
+                            read_list.remove(file)
+                        elif line.rstrip():  # optional: skipping empty lines
+                            if not self.elaborateMessage(line):
+                                break
+
+    def canContinue(self):
+        return self._alive
+
+    def elaborateMessage(self, message):
+        message = message[:-1]
+        if message == 'quit':
             self.__continuare = False
+        elif message == 'typing' or message == 'stoptyping':
+            requests.post(urls[message],
+                          headers=header,
+                          data={'id': self.__uuid})
+        elif message != 'disconnect':
+            requests.post(urls["send"],
+                          headers=header,
+                          data={'id': self.__uuid, 'msg': message})
+            self.log("You: " + message)
+        else:
+            requests.post(urls["disconnect"],
+                          headers=header,
+                          data={'id': self.__uuid})
+            self._alive = False
+            return False
+        return True
 
     def receivemessages(self):
         while True:
@@ -139,7 +169,6 @@ class subChat:
                 if received[0].__len__() > 0:
                     if received[0][0] == "strangerDisconnected":
                         self._alive = False
-                        print("Disconnected, do you wanna continue?")
                         self.log("He left the chat")
                         break
                     elif received[0][0] == "gotMessage":
@@ -158,12 +187,8 @@ class subChat:
                                   headers=header,
                                   data={'id': self.__uuid})
             match = json.loads(match.content)
-            if match.__len__() > 1:
-                if match[0][0] == "commonLikes":
-                    self.log("Tags: " + match[0][1].__str__())
-                if match.__len__() > 2:
-                    if match[1].__len__() > 1:
-                        self.log(match[1][1])
+            for i in range(1, match.__len__() - 1):
+                self.log(match[i])
 
         else:
             a = 0
