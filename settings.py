@@ -19,7 +19,7 @@ def checkDirectoryExists(path):
 
 class settingClass:
     __tags = []
-    __lang = ""
+    __lang = "it"
     __firstMessage = ""
     __delayFirstMessage = 0
     __delayResearch = 0
@@ -49,6 +49,7 @@ class settingClass:
         if checkDirectoryExists("id"):
             if os.path.isfile("id/" + str(idSetting) + ".json"):
                 self.loadFile("id/" + str(idSetting) + ".json")
+                return -1
 
     def __load(self):
         if os.path.isfile("settings.json"):

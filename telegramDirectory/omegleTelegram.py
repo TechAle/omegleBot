@@ -6,7 +6,6 @@ import logging
 import os
 from datetime import datetime
 import sys
-import select
 import time
 from settings import settingClass
 
@@ -47,10 +46,11 @@ class omegleTelegram:
     __delayFirstMessage = 0
     __delayResearch = 0
 
-    def __init__(self, idConversation, bot):
-        self.__setuppSettings(idConversation)
+    def __init__(self, idUser, idChat, bot):
+        self.__setuppSettings(idUser)
+        self.id = idChat
+        self.__bot = bot
         self.__run()
-        self._bot = bot
 
     def sendMessage(self, message):
         self.__chats.sendMessages(message)
@@ -62,23 +62,17 @@ class omegleTelegram:
         self.__firstMessage = settings.getFirstMessage()
         self.__delayFirstMessage = settings.getDelayFirstMessage()
         self.__delayResearch = settings.getDelayResearch()
-        self.__id = idConversation
 
     def __run(self):
         self.__newChat()
 
     def __newChat(self):
-        while True:
-            app.info("Looking for new chat")
-            self.addNewChat()
-            continuare = self.__chats.startChat()
-            if not continuare:
-                break
-            else:
-                time.sleep(self.__delayResearch)
+        app.info("Looking for new chat")
+        self.addNewChat()
+        self.__chats.startChat()
 
     def addNewChat(self):
-        self.__chats = subChatTelegram(self.__tags, self.__lang, self.__firstMessage, self.__delayFirstMessage, self.__id)
+        self.__chats = subChatTelegram(self.__tags, self.__lang, self.__firstMessage, self.__delayFirstMessage, self.id, self.__bot)
 
 
 # noinspection DuplicatedCode
@@ -92,11 +86,13 @@ class subChatTelegram:
     __logger = ""
     __continuare = True
 
-    def __init__(self, tags, lang, firstMessage, delay, id):
+    def __init__(self, tags, lang, firstMessage, delay, id, bot):
         self.__tags = tags
         self.__lang = lang
         self.__firstMessage = firstMessage
         self.__delayFirstMessage = delay
+        self.__bot = bot
+        self.__id = id
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y|%H:%M:%S")
         if not os.path.exists("../chatsTelegram/" + str(id)):
@@ -114,11 +110,12 @@ class subChatTelegram:
         self.sendMessages("first message")
 
     def sendMessages(self, message):
-        if self.__firstMessage != "" and message == "first message":
-            time.sleep(self.__delayFirstMessage)
-            requests.post(urls["send"],
-                          headers=header,
-                          data={'id': self.__uuid, 'msg': self.__firstMessage})
+        if message == "first message":
+            if self.__firstMessage != "":
+                time.sleep(self.__delayFirstMessage)
+                requests.post(urls["send"],
+                              headers=header,
+                              data={'id': self.__uuid, 'msg': self.__firstMessage})
         else:
             self.__elaborateMessage(message)
 
@@ -126,7 +123,6 @@ class subChatTelegram:
         return self._alive
 
     def __elaborateMessage(self, message):
-        message = message[:-1]
         if message == 'quit':
             self.__continuare = False
         elif message == 'typing' or message == 'stoptyping':
@@ -137,7 +133,7 @@ class subChatTelegram:
             requests.post(urls["send"],
                           headers=header,
                           data={'id': self.__uuid, 'msg': message})
-            self.__log("You: " + message)
+            self.__log("You: " + message, False)
         else:
             requests.post(urls["disconnect"],
                           headers=header,
@@ -190,9 +186,10 @@ class subChatTelegram:
     def __close(self):
         self._alive = False
 
-    def __log(self, msg):
+    def __log(self, msg, sendBack = True):
         app.info(msg)
         self.__logger.info(msg)
+        if sendBack:
+            self.__bot.sendMessage(chat_id=self.__id, text=msg)
 
-
-b = omegleTelegram(0, 0)
+#omegleTelegram(0,0, 0)
