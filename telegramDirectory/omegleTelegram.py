@@ -10,14 +10,16 @@ import select
 import time
 from settings import settingClass
 
+# noinspection DuplicatedCode
 read_list = [sys.stdin]
 
 timeout = 0.1  # seconds
 last_work_time = time.time()
 
-if not os.path.exists("./chats"):
-    os.makedirs("./chats")
+if not os.path.exists("../chatsTelegram"):
+    os.makedirs("../chatsTelegram")
 
+# noinspection DuplicatedCode
 formatter = logging.Formatter('%(asctime)s - %(message)s', datefmt='%H:%M:%S')
 
 
@@ -34,50 +36,53 @@ def setup_logger(name, log_file, level=logging.INFO):
     return logger
 
 
-app = setup_logger('app', 'app.log')
+app = setup_logger('appTelegram', '../appTelegram.log')
 
 
-class omegle:
+class omegleTelegram:
     __tags = []
     __lang = ""
-    __chats = []
+    __chats = 0
     __firstMessage = ""
     __delayFirstMessage = 0
     __delayResearch = 0
 
-    def __init__(self):
-        self.__setuppSettings()
+    def __init__(self, idConversation, bot):
+        self.__setuppSettings(idConversation)
         self.__run()
+        self._bot = bot
 
-    def __setuppSettings(self):
-        settings = settingClass(-1)
+    def sendMessage(self, message):
+        self.__chats.sendMessages(message)
+
+    def __setuppSettings(self, idConversation):
+        settings = settingClass(idConversation)
         self.__tags = settings.getTags()
         self.__lang = settings.getLang()
         self.__firstMessage = settings.getFirstMessage()
         self.__delayFirstMessage = settings.getDelayFirstMessage()
         self.__delayResearch = settings.getDelayResearch()
+        self.__id = idConversation
 
     def __run(self):
         self.__newChat()
 
     def __newChat(self):
-        i = 0
         while True:
             app.info("Looking for new chat")
             self.addNewChat()
-            continuare = self.__chats[i].startChat()
-            i += 1
+            continuare = self.__chats.startChat()
             if not continuare:
                 break
             else:
                 time.sleep(self.__delayResearch)
 
     def addNewChat(self):
-        self.__chats.append(
-            subChatTerminal(self.__tags, self.__lang, self.__firstMessage, self.__delayFirstMessage))
+        self.__chats = subChatTelegram(self.__tags, self.__lang, self.__firstMessage, self.__delayFirstMessage, self.__id)
 
-class subChatTerminal:
-    # noinspection DuplicatedCode
+
+# noinspection DuplicatedCode
+class subChatTelegram:
     __tags = []
     __lang = ""
     __uuid = ""
@@ -87,14 +92,16 @@ class subChatTerminal:
     __logger = ""
     __continuare = True
 
-    def __init__(self, tags, lang, firstMessage, delay):
+    def __init__(self, tags, lang, firstMessage, delay, id):
         self.__tags = tags
         self.__lang = lang
         self.__firstMessage = firstMessage
         self.__delayFirstMessage = delay
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y|%H:%M:%S")
-        self.__logger = setup_logger(dt_string, "./chats/" + dt_string + ".log")
+        if not os.path.exists("../chatsTelegram/" + str(id)):
+            os.makedirs("../chatsTelegram/" + str(id))
+        self.__logger = setup_logger(dt_string, "../chatsTelegram/" + str(id) + "/" + dt_string + ".log")
 
     def startChat(self):
         self.__newChat()
@@ -102,42 +109,23 @@ class subChatTerminal:
         return self.__continuare
 
     def __startWriting(self):
-        send = threading.Thread(target=self.sendMessages)
-        receive = threading.Thread(target=self.receivemessages)
-        send.start()
+        receive = threading.Thread(target=self.__receivemessages)
         receive.start()
-        while send.is_alive() and receive.is_alive() and self._alive:
-            time.sleep(1)
+        self.sendMessages("first message")
 
-        send.join()
-
-    def sendMessages(self):
-        if self.__firstMessage != "":
+    def sendMessages(self, message):
+        if self.__firstMessage != "" and message == "first message":
             time.sleep(self.__delayFirstMessage)
             requests.post(urls["send"],
                           headers=header,
                           data={'id': self.__uuid, 'msg': self.__firstMessage})
-        while self._alive:
-            global read_list
-            # while still waiting for input on at least one file
-            while read_list:
-                ready = select.select(read_list, [], [], timeout)[0]
-                if not ready:
-                    if not self.canContinue():
-                        break
-                else:
-                    for file in ready:
-                        line = file.readline()
-                        if not line:  # EOF, remove file from input list
-                            read_list.remove(file)
-                        elif line.rstrip():  # optional: skipping empty lines
-                            if not self.elaborateMessage(line):
-                                break
+        else:
+            self.__elaborateMessage(message)
 
-    def canContinue(self):
+    def __canContinue(self):
         return self._alive
 
-    def elaborateMessage(self, message):
+    def __elaborateMessage(self, message):
         message = message[:-1]
         if message == 'quit':
             self.__continuare = False
@@ -149,7 +137,7 @@ class subChatTerminal:
             requests.post(urls["send"],
                           headers=header,
                           data={'id': self.__uuid, 'msg': message})
-            self.log("You: " + message)
+            self.__log("You: " + message)
         else:
             requests.post(urls["disconnect"],
                           headers=header,
@@ -158,7 +146,7 @@ class subChatTerminal:
             return False
         return True
 
-    def receivemessages(self):
+    def __receivemessages(self):
         while True:
             received = json.loads(
                 requests.post(urls["event"],
@@ -173,11 +161,11 @@ class subChatTerminal:
                 if received[0].__len__() > 0:
                     if received[0][0] == "strangerDisconnected":
                         self._alive = False
-                        self.log("He left the chat")
+                        self.__log("He left the chat")
                         break
                     elif received[0][0] == "gotMessage":
                         if received[0].__len__() > 1:
-                            self.log("He: " + received[0][1])
+                            self.__log("He: " + received[0][1])
 
     def __newChat(self):
         url = urls["start"].replace("{TOPICS}", self.__tags.__str__().replace("\'", "\"")) \
@@ -192,16 +180,19 @@ class subChatTerminal:
                                   data={'id': self.__uuid})
             match = json.loads(match.content)
             for i in range(1, match.__len__() - 1):
-                self.log(match[i])
+                self.__log(match[i])
 
         else:
             for i in range(1, output.__len__() - 1):
-                self.log(output[i])
-        self.log("Found new chat")
+                self.__log(output[i])
+        self.__log("Found new chat")
 
-    def close(self):
+    def __close(self):
         self._alive = False
 
-    def log(self, msg):
+    def __log(self, msg):
         app.info(msg)
         self.__logger.info(msg)
+
+
+b = omegleTelegram(0, 0)

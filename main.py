@@ -10,7 +10,7 @@ def menu():
 
 
 def startChatting():
-    omegle(settings.getTags(), settings.getLang(), settings.getFirstMessage(), settings.getDelayFirstMessage(), settings.getDelayResearch())
+    omegle()
 
 
 def userSettings():
@@ -29,7 +29,7 @@ def close():
     quit(0)
 
 
-settings = settingClass()
+settings = settingClass(-1)
 
 if __name__ == "__main__":
     while True:

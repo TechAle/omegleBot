@@ -10,6 +10,13 @@ def sceltaInput():
             return value
 
 
+def checkDirectoryExists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+        return False
+    return True
+
+
 class settingClass:
     __tags = []
     __lang = ""
@@ -32,28 +39,39 @@ class settingClass:
     def getDelayResearch(self):
         return self.__delayResearch
 
-    def __init__(self):
-        self.__load()
+    def __init__(self, idSettings):
+        if idSettings == -1:
+            self.__load()
+        else:
+            self.__loadTelegram(idSettings)
+
+    def __loadTelegram(self, idSetting):
+        if checkDirectoryExists("id"):
+            if os.path.isfile("id/" + str(idSetting) + ".json"):
+                self.loadFile("id/" + str(idSetting) + ".json")
 
     def __load(self):
         if os.path.isfile("settings.json"):
-            self.__tags.clear()
+            self.loadFile("settings.json")
 
-            data = json.load(open("settings.json", "r"))
+    def loadFile(self, file):
+        self.__tags.clear()
 
-            self.__lang = data["lang"] if "lang" in data else "en"
+        data = json.load(open(file, "r"))
 
-            if "tags" in data:
-                self.__tags = data["tags"]
+        self.__lang = data["lang"] if "lang" in data else "it"
 
-            if "firstMessage" in data:
-                self.__firstMessage = data["firstMessage"]
+        if "tags" in data:
+            self.__tags = data["tags"]
 
-            if "delayFirstMessage" in data:
-                self.__delayFirstMessage = data["delayFirstMessage"]
+        if "firstMessage" in data:
+            self.__firstMessage = data["firstMessage"]
 
-            if "delayResearch" in data:
-                self.__delayResearch = data["delayResearch"]
+        if "delayFirstMessage" in data:
+            self.__delayFirstMessage = data["delayFirstMessage"]
+
+        if "delayResearch" in data:
+            self.__delayResearch = data["delayResearch"]
 
     def save(self):
         json.dump({
@@ -69,10 +87,9 @@ class settingClass:
             print(str(i + 1) + " " + tag)
         inp = input("Number: Remove, other: Add new tag")
         if inp.isnumeric():
-            self.__tags.pop(int(inp)-1)
+            self.__tags.pop(int(inp) - 1)
         else:
             self.__tags.append(inp)
-
 
     def changeLang(self):
         self.__lang = input("Lang: ")
