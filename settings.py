@@ -106,9 +106,8 @@ class settingClass:
     def save(self):
         path = 'settings.json'
         if self.__id != -1:
-            checkDirectoryExists("telegramDirectory")
-            checkDirectoryExists("telegramDirectory/id")
-            path = "../telegramDirectory/id/" + str(self.__id) + ".json"
+            checkDirectoryExists("id")
+            path = "./id/" + str(self.__id) + ".json"
         json.dump({
             'lang': self.__lang,
             'tags': self.__tags,

@@ -2,48 +2,25 @@ from data import urls, header
 import requests
 import json
 import threading
-import logging
+from utils import logUtils, directoryUtils
 import os
 from datetime import datetime
-import sys
 import time
 from settings import settingClass
 
-# noinspection DuplicatedCode
-read_list = [sys.stdin]
 
-timeout = 0.1  # seconds
-last_work_time = time.time()
-
-if not os.path.exists("../chatsTelegram"):
-    os.makedirs("../chatsTelegram")
-
-# noinspection DuplicatedCode
-formatter = logging.Formatter('%(asctime)s - %(message)s', datefmt='%H:%M:%S')
-
-
-def setup_logger(name, log_file, level=logging.INFO):
-    """To setup as many loggers as you want"""
-
-    handler = logging.FileHandler(log_file)
-    handler.setFormatter(formatter)
-
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
-    return logger
-
-def sendMessage(bot, id, msg):
+def sendMessage(bot, idChat, msg):
     try:
-        bot.sendMessage(chat_id=id, text=msg)
+        bot.sendMessage(chat_id=idChat, text=msg)
         time.sleep(.1)
     except:
         time.sleep(10)
-        sendMessage(bot, id, msg)
+        sendMessage(bot, idChat, msg)
 
 
-app = setup_logger('appTelegram', '../appTelegram.log')
+directoryUtils.createIfNotExists("./chatsTelegram")
+
+app = logUtils.setup_logger('appTelegram', './appTelegram.log')
 
 
 class omegleTelegram:
@@ -96,8 +73,6 @@ class omegleTelegram:
                                        self.__bot, self.__skipMessages)
 
 
-
-# noinspection DuplicatedCode
 class subChatTelegram:
     __tags = []
     __lang = ""
@@ -118,9 +93,9 @@ class subChatTelegram:
         self.__skipmessages = skipMessage
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y|%H:%M:%S")
-        if not os.path.exists("../chatsTelegram/" + str(id)):
-            os.makedirs("../chatsTelegram/" + str(id))
-        self.__logger = setup_logger(dt_string, "../chatsTelegram/" + str(id) + "/" + dt_string + ".log")
+        if not os.path.exists("./chatsTelegram/" + str(id)):
+            os.makedirs("./chatsTelegram/" + str(id))
+        self.__logger = logUtils.setup_logger(dt_string, "./chatsTelegram/" + str(id) + "/" + dt_string + ".log")
 
     def startChat(self):
         self.__newChat()
@@ -185,8 +160,6 @@ class subChatTelegram:
                     elif received[0][0] == "gotMessage":
                         if received[0].__len__() > 1:
                             self.__log("He: " + received[0][1])
-
-
 
     def __newChat(self):
         url = urls["start"].replace("{TOPICS}", self.__tags.__str__().replace("\'", "\"")) \

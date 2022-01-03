@@ -52,7 +52,6 @@ class telegramBot:
             if chat.id == update.effective_chat.id:
                 chat.sendMessage(update.message.text)
 
-
     def __onDisconnect(self, update, context):
         for i in range(self.nChats.__len__()):
             if self.nChats[i].id == update.effective_chat.id:
@@ -60,8 +59,6 @@ class telegramBot:
                 self.nChats.pop(i)
                 return -1
         update.message.reply_text('You dont have a chat active')
-
-
 
     @limitUser
     def __onStart(self, update, context):
@@ -119,7 +116,8 @@ class telegramBot:
         sendMessage(update, context, "You havent opened a chat")
 
     def __onInfo(self, update, context):
-        sendMessage(update, context, "This is a bot created by TechAle, you can find the source code on https://github.com/TechAle/omegleBot")
+        sendMessage(update, context,
+                    "This is a bot created by TechAle, you can find the source code on https://github.com/TechAle/omegleBot")
 
     def __setupHandlers(self):
         # Get the dispatcher to register handlers
@@ -140,5 +138,10 @@ class telegramBot:
         self.__updater.idle()
 
 
-bot = telegramBot(credentials.TOKEN)
-bot.start()
+global bot
+
+
+def startBot():
+    global bot
+    bot = telegramBot(credentials.TOKEN)
+    bot.start()

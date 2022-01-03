@@ -1,41 +1,26 @@
+# Libraries
 from data import urls, header
 import requests
 import json
 import threading
-import logging
-import os
 from datetime import datetime
 import sys
 import select
 import time
 from settings import settingClass
+from utils import logUtils, directoryUtils
 
+# Directory of every chats
+directoryUtils.createIfNotExists("./chats")
+
+# Logger
+app = logUtils.setup_logger('app', 'app.log')
+
+# For reading from the terminal without a blocking input
 read_list = [sys.stdin]
 
 timeout = 0.1  # seconds
 last_work_time = time.time()
-
-if not os.path.exists("./chats"):
-    os.makedirs("./chats")
-
-formatter = logging.Formatter('%(asctime)s - %(message)s', datefmt='%H:%M:%S')
-
-
-def setup_logger(name, log_file, level=logging.INFO):
-    """To setup as many loggers as you want"""
-
-    handler = logging.FileHandler(log_file)
-    handler.setFormatter(formatter)
-
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
-    return logger
-
-
-app = setup_logger('app', 'app.log')
-
 
 class omegle:
     __tags = []
@@ -76,6 +61,7 @@ class omegle:
         self.__chats.append(
             subChatTerminal(self.__tags, self.__lang, self.__firstMessage, self.__delayFirstMessage))
 
+
 class subChatTerminal:
     # noinspection DuplicatedCode
     __tags = []
@@ -94,7 +80,7 @@ class subChatTerminal:
         self.__delayFirstMessage = delay
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y|%H:%M:%S")
-        self.__logger = setup_logger(dt_string, "./chats/" + dt_string + ".log")
+        self.__logger = logUtils.setup_logger(dt_string, "./chats/" + dt_string + ".log")
 
     def startChat(self):
         self.__newChat()
