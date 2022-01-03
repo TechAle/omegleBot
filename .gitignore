@@ -1,6 +1,9 @@
-./chats/
-./chatsTelegram/
 *.log
 .DS_STORE
 test.py
-telegramDirectory/id
+telegramDirectory/id/*
+.idea/
+__pycache__/
+chats/
+chatsTelegram/
+telegramDirectory/__pycache__/
