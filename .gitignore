@@ -3,3 +3,4 @@
 *.log
 .DS_STORE
 test.py
+telegramDirectory/id

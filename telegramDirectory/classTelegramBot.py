@@ -1,7 +1,10 @@
+import time
+
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import credentials
 from telegramDirectory.omegleTelegram import omegleTelegram
+from settings import settingClass
 
 # Allowed people that can use the bot
 allowedId = [217315169]
@@ -21,7 +24,9 @@ def limitUser(func):
 def sendMessage(update, context, message):
     context.bot.sendMessage(chat_id=update.message.chat_id, text=message)
 
+
 globalBot = 0
+
 
 class telegramBot:
     nChats = []
@@ -36,7 +41,6 @@ class telegramBot:
         globalBot = self.__updater.bot
         # Start the Bot
         self.__updater.start_polling()
-        self.__updater.idle()
 
     @limitUser
     def __onError(self, update, context):
@@ -47,6 +51,17 @@ class telegramBot:
         for chat in self.nChats:
             if chat.id == update.effective_chat.id:
                 chat.sendMessage(update.message.text)
+
+
+    def __onDisconnect(self, update, context):
+        for i in range(self.nChats.__len__()):
+            if self.nChats[i].id == update.effective_chat.id:
+                self.nChats[i].sendMessage("disconnect")
+                self.nChats.pop(i)
+                return -1
+        update.message.reply_text('You dont have a chat active')
+
+
 
     @limitUser
     def __onStart(self, update, context):
@@ -62,11 +77,49 @@ class telegramBot:
 
     @limitUser
     def __onEndChat(self, update, context):
-        for chat in self.nChats:
-            if chat.id == update.effective_chat.id:
-                self.nChats.pop(chat)
+        for i in range(self.nChats.__len__()):
+            if self.nChats[i].id == update.effective_chat.id:
+                self.nChats[i].sendMessage("disconnect")
                 return -1
         sendMessage(update, context, "You havent opened a chat")
+
+    @limitUser
+    def __onSet(self, update, context):
+        message = update.message.text.split(" ")
+        if message.__len__() == 1:
+            sendMessage(update, context,
+                        "set + \nlang [lang]\ntag add/remove [tag]\n"
+                        "firstMessage [message]\ndelayFirstMessage [number]\n"
+                        "delayResearch [number]\nskipMessages [true/false]")
+        else:
+            setting = settingClass(update.message.from_user.id)
+            if message[1] == "tag":
+                setting.setTag(message[3], message[2])
+            elif message[1] == "lang":
+                setting.setLang(message[2])
+            elif message[1] == "firstMessage":
+                setting.setFirstMessage(message[2])
+            elif message[1] == "delayFirstMessage":
+                setting.setDelayFirstMessage(int(message[2]))
+            elif message[1] == "delayResearch":
+                setting.setDelayResearch(int(message[2]))
+            elif message[1] == "skipMessages":
+                setting.setSkipMessage(message[2])
+            setting.save()
+
+    @limitUser
+    def __onStop(self, update, context):
+        for i in range(self.nChats.__len__()):
+            if self.nChats[i].id == update.effective_chat.id:
+                self.nChats[i].sendMessage("disconnect")
+                self.nChats[i].sendMessage("quit")
+                self.nChats[i].close()
+                self.nChats.pop(i)
+                return -1
+        sendMessage(update, context, "You havent opened a chat")
+
+    def __onInfo(self, update, context):
+        sendMessage(update, context, "This is a bot created by TechAle, you can find the source code on https://github.com/TechAle/omegleBot")
 
     def __setupHandlers(self):
         # Get the dispatcher to register handlers
@@ -75,10 +128,17 @@ class telegramBot:
         dp.add_handler(CommandHandler("start", self.__onStart))
         dp.add_handler(CommandHandler("newchat", self.__onNewChat))
         dp.add_handler(CommandHandler("endchat", self.__onEndChat))
+        dp.add_handler(CommandHandler("stop", self.__onStop))
+        dp.add_handler(CommandHandler("set", self.__onSet))
+        dp.add_handler(CommandHandler("info", self.__onInfo))
 
         dp.add_handler(MessageHandler(Filters.text, self.__onMessage))
 
         dp.add_error_handler(self.__onError)
 
+    def start(self):
+        self.__updater.idle()
 
-telegramBot(credentials.TOKEN)
+
+bot = telegramBot(credentials.TOKEN)
+bot.start()
