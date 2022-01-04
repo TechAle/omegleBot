@@ -1,5 +1,3 @@
-import time
-
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import credentials
@@ -42,9 +40,6 @@ class telegramBot:
         # Start the Bot
         self.__updater.start_polling()
 
-    @limitUser
-    def __onError(self, update, context):
-        self.__logger.warning('Update "%s" caused error "%s"', update, context.error)
 
     @limitUser
     def __onMessage(self, update, context):
@@ -52,13 +47,6 @@ class telegramBot:
             if chat.id == update.effective_chat.id:
                 chat.sendMessage(update.message.text)
 
-    def __onDisconnect(self, update, context):
-        for i in range(self.nChats.__len__()):
-            if self.nChats[i].id == update.effective_chat.id:
-                self.nChats[i].sendMessage("disconnect")
-                self.nChats.pop(i)
-                return -1
-        update.message.reply_text('You dont have a chat active')
 
     @limitUser
     def __onStart(self, update, context):
@@ -95,11 +83,14 @@ class telegramBot:
             elif message[1] == "lang":
                 setting.setLang(message[2])
             elif message[1] == "firstMessage":
-                setting.setFirstMessage(message[2])
+                if message.__len__() > 1:
+                    setting.setFirstMessage(" ".join(message[2:]))
+                else:
+                    setting.setFirstMessage("")
             elif message[1] == "delayFirstMessage":
-                setting.setDelayFirstMessage(int(message[2]))
+                setting.setDelayFirstMessage(float(message[2]))
             elif message[1] == "delayResearch":
-                setting.setDelayResearch(int(message[2]))
+                setting.setDelayResearch(float(message[2]))
             elif message[1] == "skipMessages":
                 setting.setSkipMessage(message[2])
             setting.save()
@@ -126,13 +117,13 @@ class telegramBot:
         dp.add_handler(CommandHandler("start", self.__onStart))
         dp.add_handler(CommandHandler("newchat", self.__onNewChat))
         dp.add_handler(CommandHandler("endchat", self.__onEndChat))
+        dp.add_handler(CommandHandler("disconnect", self.__onEndChat))
         dp.add_handler(CommandHandler("stop", self.__onStop))
         dp.add_handler(CommandHandler("set", self.__onSet))
         dp.add_handler(CommandHandler("info", self.__onInfo))
 
         dp.add_handler(MessageHandler(Filters.text, self.__onMessage))
 
-        dp.add_error_handler(self.__onError)
 
     def start(self):
         self.__updater.idle()

@@ -155,7 +155,7 @@ class subChatTelegram:
                 if received[0].__len__() > 0:
                     if received[0][0] == "strangerDisconnected":
                         self._alive = False
-                        self.__log("He left the chat")
+                        self.__log("He left the chat", skipMessage=self.__skipmessages)
                         break
                     elif received[0][0] == "gotMessage":
                         if received[0].__len__() > 1:
@@ -174,17 +174,16 @@ class subChatTelegram:
                                   data={'id': self.__uuid})
             match = json.loads(match.content)
             for i in range(1, match.__len__() - 1):
-                self.__log(match[i])
+                self.__log(match[i], skipMessage=self.__skipmessages)
 
         else:
             for i in range(1, output.__len__() - 1):
-                self.__log(output[i])
+                self.__log(output[i], skipMessage=self.__skipmessages)
 
-        if not self.__skipmessages:
-            self.__log("Found new chat")
+        self.__log("Found new chat", skipMessage=self.__skipmessages)
 
-    def __log(self, msg, sendBack=True):
+    def __log(self, msg, sendBack=True, skipMessage=False):
         app.info(msg)
         self.__logger.info(msg)
-        if sendBack:
+        if sendBack and not skipMessage:
             sendMessage(self.__bot, self.__id, msg)

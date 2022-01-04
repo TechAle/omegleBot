@@ -63,7 +63,6 @@ class omegle:
 
 
 class subChatTerminal:
-    # noinspection DuplicatedCode
     __tags = []
     __lang = ""
     __uuid = ""
