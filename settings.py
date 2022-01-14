@@ -36,7 +36,8 @@ class settingClass:
         if operation == "add":
             self.__tags.append(tag)
         else:
-            self.__tags.pop(self.__tags.index(tag))
+            if self.__tags.__contains__(tag):
+                self.__tags.pop(self.__tags.index(tag))
 
     def changeTags(self):
         for i, tag in enumerate(self.__tags):
@@ -87,7 +88,7 @@ class settingClass:
         return self.__skipMessages
 
     def setSkipMessage(self, value):
-        self.__skipMessages = value == "yes"
+        self.__skipMessages = value.lower() == "yes" or value.lower() == "true"
 
     '''
         idSettings:

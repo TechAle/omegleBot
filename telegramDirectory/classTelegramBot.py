@@ -78,7 +78,7 @@ class telegramBot:
                         "delayResearch [number]\nskipMessages [true/false]")
         else:
             setting = settingClass(update.message.from_user.id)
-            if message[1] == "tag":
+            if message[1] == "tag" and message.__len__() == 4:
                 setting.setTag(message[3], message[2])
             elif message[1] == "lang":
                 setting.setLang(message[2])
@@ -94,6 +94,13 @@ class telegramBot:
             elif message[1] == "skipMessages":
                 setting.setSkipMessage(message[2])
             setting.save()
+
+            sendMessage(update, context, "Tag: " + setting.getTags().__str__() +
+                        "\nLang: " + setting.getLang() +
+                        "\nfirstMessage: " + setting.getFirstMessage() +
+                        "\ndelayFirstMessage: " + setting.getDelayFirstMessage().__str__() +
+                        "\ndelayResearch: " + setting.getDelayResearch().__str__() +
+                        "\nskipMessages: " + setting.getSkipmessages().__str__())
 
     @limitUser
     def __onStop(self, update, context):

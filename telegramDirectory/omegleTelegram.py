@@ -82,6 +82,7 @@ class subChatTelegram:
     _alive = True
     __logger = ""
     __continuare = True
+    __firstMessageSent = False
 
     def __init__(self, tags, lang, firstMessage, delay, id, bot, skipMessage):
         self.__tags = tags
@@ -114,6 +115,7 @@ class subChatTelegram:
                               headers=header,
                               data={'id': self.__uuid, 'msg': self.__firstMessage})
         else:
+            self.__firstMessageSent = True
             self.__elaborateMessage(message)
 
     def __canContinue(self):
@@ -155,7 +157,7 @@ class subChatTelegram:
                 if received[0].__len__() > 0:
                     if received[0][0] == "strangerDisconnected":
                         self._alive = False
-                        self.__log("He left the chat", skipMessage=self.__skipmessages)
+                        self.__log("He left the chat", skipMessage=self.__skipmessages and not self.__firstMessageSent)
                         break
                     elif received[0][0] == "gotMessage":
                         if received[0].__len__() > 1:
@@ -173,8 +175,9 @@ class subChatTelegram:
                                   headers=header,
                                   data={'id': self.__uuid})
             match = json.loads(match.content)
-            for i in range(1, match.__len__() - 1):
-                self.__log(match[i], skipMessage=self.__skipmessages)
+            if type(match) is list:
+                for i in range(1, match.__len__() - 1):
+                    self.__log(match[i], skipMessage=self.__skipmessages)
 
         else:
             for i in range(1, output.__len__() - 1):
