@@ -1,3 +1,5 @@
+import telegram
+
 from data import urls, header
 import requests
 import json
@@ -83,6 +85,7 @@ class subChatTelegram:
     __logger = ""
     __continuare = True
     __firstMessageSent = False
+    __typing = False
 
     def __init__(self, tags, lang, firstMessage, delay, id, bot, skipMessage):
         self.__tags = tags
@@ -101,6 +104,8 @@ class subChatTelegram:
     def startChat(self):
         self.__newChat()
         self.__startWriting()
+        if self.__typing:
+            self.__bot.send_chat_action(chat_id=self.__id, action=telegram.ChatAction.TYPING)
         return self.__continuare
 
     def __startWriting(self):
@@ -162,6 +167,12 @@ class subChatTelegram:
                     elif received[0][0] == "gotMessage":
                         if received[0].__len__() > 1:
                             self.__log("He: " + received[0][1])
+                    elif received[0][0] == "typing":
+                        self.__bot.send_chat_action(chat_id=self.__id, action=telegram.ChatAction.TYPING)
+                        self.__typing = True
+                    elif received[0][0] == "stoppedTyping":
+                        self.__bot.send_chat_action(chat_id=self.__id, action=telegram.ChatAction.TYPING)
+                        self.__typing = False
 
     def __newChat(self):
         url = urls["start"].replace("{TOPICS}", self.__tags.__str__().replace("\'", "\"")) \

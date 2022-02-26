@@ -1,4 +1,4 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler
 import logging
 import credentials
 from telegramDirectory.omegleTelegram import omegleTelegram
@@ -130,6 +130,8 @@ class telegramBot:
         dp.add_handler(CommandHandler("info", self.__onInfo))
 
         dp.add_handler(MessageHandler(Filters.text, self.__onMessage))
+
+
 
 
     def start(self):
