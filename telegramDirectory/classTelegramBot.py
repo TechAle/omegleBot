@@ -41,11 +41,11 @@ class telegramBot:
         self.__updater.start_polling()
 
 
-    @limitUser
     def __onMessage(self, update, context):
-        for chat in self.nChats:
-            if chat.id == update.effective_chat.id:
-                chat.sendMessage(update.message.text)
+        if allowedId.__contains__(update.message.from_user.id):
+            for chat in self.nChats:
+                if chat.id == update.effective_chat.id:
+                    chat.sendMessage(update.message.text)
 
 
     @limitUser
